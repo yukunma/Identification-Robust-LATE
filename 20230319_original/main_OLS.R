@@ -20,8 +20,13 @@ t_0 = 1;                  # true target parameter
 NUM_MC = 5;               # number of simulation
 crit_sims=100;            # number of conditional simulation
 
-source("dgp.R")           # dgp
-source("Cric_sim.R")
+
+work_directory <- getwd()
+sub_directory <- "/20230319_original/"
+source(paste0(work_directory, sub_directory, "dgp.R")) # dgp
+source(paste0(work_directory, sub_directory, "Cric_sim.R")) 
+
+
 LIST_RESULTS = NULL;
 QLR_store = matrix(0,NUM_MC,length(theta_grid));
 QLR_crit_store = matrix(0,NUM_MC,length(theta_grid));

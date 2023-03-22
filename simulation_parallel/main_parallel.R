@@ -15,11 +15,11 @@ start_time <- proc.time() # record start time
 ################# Set parameters ###############################
 ################################################################
 
-N = 20;                    # number of observations
+N = 500;                    # number of observations
 K = 3;                    # number of fold
 dimX = 100;               # dimensionality of X
 t_0 = 1;                  # true target parameter
-NUM_ITERATIONS = 5;               # number of simulation
+NUM_ITERATIONS = 2500;               # number of simulation
 crit_sims=100;            # number of conditional simulation
 
 
@@ -92,11 +92,12 @@ theta_scaling = 0.2;
 #######range for theta_grid: [-7,9]##################
 theta_grid = theta_base_grid*theta_scaling+t_0;
 
+wtf1 = NULL
+wtf2 = NULL
 
 
-
-QLR_store = matrix(0,NUM_ITERATIONS,length(theta_grid));
-QLR_crit_store = matrix(0,NUM_ITERATIONS,length(theta_grid));
+QLR_stores = matrix(0,NUM_ITERATIONS,length(theta_grid));
+QLR_crit_stores = matrix(0,NUM_ITERATIONS,length(theta_grid));
 QLR_power  = rep(0,length(theta_grid));
 # set grid of points on which to evaluate statistic#
 t_grid_base=c(seq(0,2,by=0.02),seq(2.05,4,by=0.05),seq(4.1,10,by=0.1),seq(10.5,20,by=0.5),30,40,50);
@@ -119,8 +120,8 @@ clusterEvalQ(cl, {
 for (t in 1:length(theta_grid)){       #####. t in 1:81 theta_grid=[-7,9]###
   t_grid_temp = c(t_grid,theta_grid[t,]);
 
-
-  RESULTS <- foreach(iter = 1 : NUM_ITERATIONS, .combine = rbind) %dopar% {
+  RESULT = NULL
+  RESULT <- foreach(iter = 1 : NUM_ITERATIONS, .combine = rbind, .multicombine = TRUE) %dopar% {
     X = mvrnorm(N, muXi, SigmaXi);
     p.z = 1/(1+exp(-(X %*% gamma+gamma0)));
     Z = stats::rbinom(N, size=1, prob = p.z);
@@ -221,35 +222,52 @@ for (t in 1:length(theta_grid)){       #####. t in 1:81 theta_grid=[-7,9]###
     
     AR_LR_true = AR_LR[,length(AR_LR)];
     AR_LR = AR_LR[,1:length(AR_LR)-1];
-    QLR_store[iter,t] =AR_LR[which(t_grid==t_0)]-min(AR_LR);
     
-    # if (QLR_store[iter,t] < qchisq(0.95,1)){
-    #   a = cric_sim(h_store,V0,V_cov_store,V_store,crit_sim_shocks,t_grid_temp,t_0,theta_grid[t,1],N)
-    #   QLR_crit_store[iter,t] = a$QLRcrit;
-    # }
-    # else{
-    #   QLR_crit_store[iter,t] = qchisq(0.95,1);
-    # }
+    QLR_store = NULL
+    QLR_crit_store = NULL
+    QLR_store =AR_LR[which(t_grid == t_0)]-min(AR_LR);
+
+    if (QLR_store < qchisq(0.95,1)){
+      a = cric_sim(h_store,V0,V_cov_store,V_store,crit_sim_shocks,t_grid_temp,t_0,theta_grid[t,1],N)
+      QLR_crit_store = a$QLRcrit;
+    }
+    else{
+      QLR_crit_store = qchisq(0.95,1);
+    }
     
-    return(1)
+    return(list(QLR = QLR_store, QLR_crit = QLR_crit_store))
   }
-
-
- 
+  
+  QLR_store_results = NULL
+  QLR_crit_store_results = NULL
+  for(i in 1 : nrow(RESULT)){
+    row <- RESULT[i, ]
+    QLR_store_results <- c(QLR_store_results, row$QLR)
+    QLR_crit_store_results <-  c(QLR_crit_store_results, row$QLR_crit)
+  }
+  wtf1[[t]] <- QLR_store_results
+  wtf2[[t]] <- QLR_crit_store_results
 }
 
 # Stop the parallel processing environment
 stopCluster(cl)
 
-# 
+
 # for (t in 1:81){
 #   QLR_power[t] = mean(QLR_store[,t]>QLR_crit_store[,t]);
 # }
 # 
-# plot(theta_grid,QLR_power, type="l", lty=2, xlab = "", ylab = "");
+# plot(theta_grid, QLR_power, type="l", lty=2, xlab = "", ylab = "");
 # 
-# 
-# 
+
+
+for (t in 1:81){
+  QLR_power[t] = mean(wtf1[[t]] > wtf2[[t]]);
+}
+
+plot(theta_grid, QLR_power, type="l", lty=2, xlab = "", ylab = "");
+
+
 
 # Record end time and print elapsed time
 end_time <- proc.time()

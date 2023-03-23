@@ -28,7 +28,7 @@ beta12 = matrix(1, dimX, 1)
 beta21 = 1.0
 beta22 = matrix(1, dimX, 1)
 
-selected_beta_set = 0
+selected_beta_set = 1
 if(selected_beta_set == 0){
   beta11 = -2
   beta12 = matrix(c(0.5^(1:dimX)), dimX, 1)
@@ -224,6 +224,7 @@ for (t in 1:length(theta_grid)){       #####. t in 1:81 theta_grid=[-7,9]###
     return(list(QLR = QLR_store, QLR_crit = QLR_crit_store))
   }
   # End Parallel Computing for Given t 
+  print(t)
   QLR_store_rows = NULL
   QLR_crit_store_rows = NULL
   for(i in 1 : nrow(RESULT)){
@@ -261,7 +262,7 @@ output_params <- data.frame(N = N,
                             theta_grid_lo = min(theta_grid),
                             theta_grid_hi = max(theta_grid))
 
-plot(output_data, type="l", lty=2, xlab = "", ylab = "")
+
 
 filepath = paste0(getwd(), "/results/")
 ifelse(!dir.exists(filepath), dir.create(filepath), FALSE)
@@ -270,9 +271,12 @@ ifelse(!dir.exists(filepath), dir.create(filepath), FALSE)
 current_time = format(Sys.time(), "%Y%m%d%H%M%S")
 data_filename  = paste0(filepath, "betas_", selected_beta_set, "_NUM", NUM_ITERATIONS, "_", current_time, "_data.csv")
 parms_filename = paste0(filepath, "betas_", selected_beta_set, "_NUM", NUM_ITERATIONS, "_", current_time, "_parms.csv")
-
+plot_filename  = paste0(filepath, "betas_", selected_beta_set, "_NUM", NUM_ITERATIONS, "_", current_time, "_plot.pdf")
 write.csv(output_data, file = data_filename, row.names = FALSE)
 write.csv(output_params, file = parms_filename, row.names = FALSE)
+pdf(plot_filename)  # create a new PDF file
+plot(output_data, type="l", lty=2, xlab = "", ylab = "")
+dev.off()
 
 # Record end time and print elapsed time
 end_time <- proc.time()

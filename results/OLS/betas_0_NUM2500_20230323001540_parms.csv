@@ -1,0 +1,2 @@
+"N","K","dimX","t_0","NUM_ITERATIONS","NUM_CRITSIMS","gamma0","selected_beta_set","beta11","beta21","theta_base_grid_lo","theta_base_grid_hi","theta_base_grid_length","theta_scaling","theta_grid_lo","theta_grid_hi"
+500,3,100,1,2500,1000,-0.5,0,-2,1,-40,40,81,0.2,-7,9
